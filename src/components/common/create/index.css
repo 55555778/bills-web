@@ -1,0 +1,6 @@
+.ant-tabs-nav::before {
+  border: none !important;
+}
+.ant-tabs-tab {
+  font-size: 18px !important;
+}

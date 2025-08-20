@@ -1,0 +1,9 @@
+.my-classname {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  height: 100%;
+}
+.flex-col {
+  width: 100%;
+}
