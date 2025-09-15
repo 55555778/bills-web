@@ -2,6 +2,8 @@
 /** @type {import("@commitlint/types").UserConfig} */
 
 export default {
+  ignores: [(commit) => commit.includes('init')],
+
   extends: ['@commitlint/config-conventional'], // 使用社区标准规范
   rules: {
     // 自定义规则（可选）

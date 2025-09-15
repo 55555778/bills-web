@@ -1,0 +1,25 @@
+module.exports = {
+  types: [
+    { value: 'feat', name: '✨ feat: 添加新特性、新功能' },
+    { value: 'fix', name: '🐛 fix: 修复 bug' },
+    { value: 'docs', name: '📚 docs: 文档更新' },
+    { value: 'style', name: '🌈 style: 代码格式调整' },
+    { value: 'refactor', name: '📦 refactor: 代码重构' },
+    { value: 'perf', name: '🚀 perf: 性能优化' },
+    { value: 'test', name: '🧪 test: 增加测试' },
+    { value: 'chore', name: '♻️ chore: 杂项修改' },
+    { value: 'revert', name: '🗑 revert: 回滚代码' },
+  ],
+  allowCustomScopes: true,
+  allowBreakingChanges: ['feat', 'fix'],
+  messages: {
+    type: '请选择提交类型:',
+    scope: '请输入更改范围 (可选):',
+    customScope: '请输入自定义范围:',
+    subject: '请简短描述本次更改:',
+    body: '请输入详细描述 (可选):',
+    breaking: '请输入破坏性变更说明 (可选):',
+    footer: '请输入关联 issue (可选):',
+    confirmCommit: '确认提交吗?',
+  },
+};
