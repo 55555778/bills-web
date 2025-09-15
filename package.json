@@ -8,7 +8,13 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "prepare": "husky"
+    "prepare": "husky",
+    "commit": "commitlint --prompt"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-git"
+    }
   },
   "dependencies": {
     "@ant-design/happy-work-theme": "^1.0.1",
