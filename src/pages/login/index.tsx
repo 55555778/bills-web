@@ -115,7 +115,7 @@ export default function Login() {
           </Form.Item>
 
           <Form.Item label={null}>
-            <Button type="primary" htmlType="submit">
+            <Button type="primary" htmlType="submit" className="w-full">
               Submit
             </Button>
           </Form.Item>
@@ -196,11 +196,19 @@ export default function Login() {
 
   return (
     <div className={` min-h-screen  f-c-c flex-col ${!isDark ? 'isDark_bg isMain_text' : ''}`}>
-      <h1 className="mb-10 font-medium text-2xl">Login</h1>
       <div
-        className={`w-100  rounded-2xl bg-[#fff] f-c-c inset-shadow-sm ${!isDark ? 'isDark_box_bg' : ''}`}
+        className={`w-100! pt-10  rounded-2xl bg-[#fff] f-c-c flex-col shadow-c-cycle  ${!isDark ? 'isDark_box_bg' : ''}`}
       >
-        <Tabs defaultActiveKey="1" centered onChange={onChangeTabs} items={items} />
+        <h1 className="mb-2 font-medium text-2xl">Welcome Back</h1>
+
+        <Tabs
+          defaultActiveKey="1"
+          size="middle"
+          centered
+          onChange={onChangeTabs}
+          items={items}
+          className="w-80%"
+        />
       </div>
     </div>
   );

@@ -40,6 +40,12 @@ body,
 .isDark_box_bg {
   background-color: #2a2a2a;
 }
+.shadow-c-cycle {
+  box-shadow:
+    rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
+    rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
+}
+
 .isDark_bg {
   background-color: #1a1a1c;
   color: #f3f3f3;
