@@ -53,10 +53,11 @@ jobs:
 
       # 5. 安装依赖
       - name: Install Dependencies
-        env:
-          CYPRESS_DOWNLOAD_MIRROR: https://npmmirror.com/mirrors/cypress/
+        # ⚠️ 删除 env 部分，不要强制指定 CYPRESS_DOWNLOAD_MIRROR
+        # 让它自动去官方 CDN 下载，由于服务器在国外，速度会很快且不会 404
         run: |
-          pnpm config set registry https://registry.npmmirror.com
+          # ⚠️ 删除 pnpm config set registry ... 那一行
+          # 直接安装即可
           pnpm install --frozen-lockfile
 
       # 6. 运行测试
