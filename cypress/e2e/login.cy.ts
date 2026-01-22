@@ -31,7 +31,7 @@ describe('template spec', () => {
   });
 
   it('登录成功测试', () => {
-    LoginPage.fillLogin(userData.invalidUser.email, userData.validUser.password);
+    LoginPage.fillLogin(userData.validUser.email, userData.validUser.password);
     // cy.url().should('include', '/');
     cy.url().should('eq', Cypress.config().baseUrl + '/'); // 精确匹配
   });

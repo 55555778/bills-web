@@ -1,24 +1,21 @@
-name: CI/CD Pipeline # 1. 工作流名称
+name: CI/CD Pipeline
 
-# 2. 触发条件：推送到 main 分支时运行
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
-# 3. 任务定义区域
+# ⚠️ 只能有一个 jobs 关键字
 jobs:
-  build-and-test: # 任务ID
+  # === 阶段一：CI (真实的测试任务) ===
+  build-and-test:
     name: Build and Test
-    runs-on: ubuntu-latest # 4. 指定运行环境 (Linux)
-
-    # 5. 定义变量矩阵 (因为你的代码里用了 matrix.node-version)
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20] # 这里指定使用 Node.js 20
+        node-version: [20]
 
-    # 6. 这里才是你之前写的 steps
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -38,14 +35,12 @@ jobs:
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-      # 1. 修改缓存配置：把 Cypress 的二进制目录也加上！
       - name: Setup pnpm and Cypress cache
         uses: actions/cache@v3
         with:
           path: |
             ${{ env.STORE_PATH }}
             ~/.cache/Cypress
-          # 上面这一行增加了 Cypress 默认缓存路径
           key: ${{ runner.os }}-pnpm-cypress-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-cypress-
@@ -53,22 +48,13 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      # 2. 修改运行步骤：增加 npx cypress install
       - name: Run Cypress Tests
         run: |
-          # 显式安装 Cypress 二进制文件 (如果缓存里有，它会瞬间完成；如果没有，它会下载)
           npx cypress install
-
-          # 后台启动服务
           pnpm run dev & 
-
-          # 等待服务就绪
           npx wait-on http://localhost:5173
-
-          # 运行测试
           npx cypress run
 
-      # 3. 保持之前添加的保存报告功能
       - name: Upload Cypress Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -78,3 +64,58 @@ jobs:
             cypress/screenshots
             cypress/videos
           retention-days: 5
+          if-no-files-found: ignore
+
+  # === 阶段二：CD Part 1 (打包并推送) ===
+  build-and-push:
+    # ⚠️ 关键：这里要写上面那个任务的名字，表示“必须等测试通过了再跑我”
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # 👇 TODO: 这里的 react-demo 建议改成你想要的镜像名
+          tags: ${{ secrets.DOCKER_USERNAME }}/react-demo:latest
+
+  # === 阶段三：CD Part 2 (部署到服务器) ===
+  deploy:
+    needs: build-and-push # ⚠️ 关键：必须等镜像推完再跑
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH into Server and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          # 👇 下面的脚本会在你的服务器上执行
+          script: |
+            # 1. 停止并删除旧容器
+            docker stop my-react-app || true
+            docker rm my-react-app || true
+
+            # 2. 删除旧镜像 (为了省空间，也可以不删)
+            docker rmi ${{ secrets.DOCKER_USERNAME }}/react-demo:latest || true
+
+            # 3. 拉取刚才打包好的新镜像
+            docker pull ${{ secrets.DOCKER_USERNAME }}/react-demo:latest
+
+            # 4. 启动新容器
+            # ⚠️ 注意端口：我写的是 9090:80，因为你刚才本地测试成功的是这个端口
+            docker run -d \
+              --name my-react-app \
+              -p 9090:80 \
+              --restart always \
+              ${{ secrets.DOCKER_USERNAME }}/react-demo:latest
