@@ -19,62 +19,62 @@ jobs:
         node-version: [20] # 这里指定使用 Node.js 20
 
     # 6. 这里才是你之前写的 steps
-  steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 9
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
 
-    - name: Get pnpm store directory
-      shell: bash
-      run: |
-        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-    # 1. 修改缓存配置：把 Cypress 的二进制目录也加上！
-    - name: Setup pnpm and Cypress cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ${{ env.STORE_PATH }}
-          ~/.cache/Cypress
-        # 上面这一行增加了 Cypress 默认缓存路径
-        key: ${{ runner.os }}-pnpm-cypress-${{ hashFiles('**/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-pnpm-cypress-
+      # 1. 修改缓存配置：把 Cypress 的二进制目录也加上！
+      - name: Setup pnpm and Cypress cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ env.STORE_PATH }}
+            ~/.cache/Cypress
+          # 上面这一行增加了 Cypress 默认缓存路径
+          key: ${{ runner.os }}-pnpm-cypress-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-cypress-
 
-    - name: Install Dependencies
-      run: pnpm install --frozen-lockfile
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
 
-    # 2. 修改运行步骤：增加 npx cypress install
-    - name: Run Cypress Tests
-      run: |
-        # 显式安装 Cypress 二进制文件 (如果缓存里有，它会瞬间完成；如果没有，它会下载)
-        npx cypress install
+      # 2. 修改运行步骤：增加 npx cypress install
+      - name: Run Cypress Tests
+        run: |
+          # 显式安装 Cypress 二进制文件 (如果缓存里有，它会瞬间完成；如果没有，它会下载)
+          npx cypress install
 
-        # 后台启动服务
-        pnpm run dev & 
+          # 后台启动服务
+          pnpm run dev & 
 
-        # 等待服务就绪
-        npx wait-on http://localhost:5173
+          # 等待服务就绪
+          npx wait-on http://localhost:5173
 
-        # 运行测试
-        npx cypress run
+          # 运行测试
+          npx cypress run
 
-    # 3. 保持之前添加的保存报告功能
-    - name: Upload Cypress Evidence
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: cypress-evidence
-        path: |
-          cypress/screenshots
-          cypress/videos
-        retention-days: 5
+      # 3. 保持之前添加的保存报告功能
+      - name: Upload Cypress Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-evidence
+          path: |
+            cypress/screenshots
+            cypress/videos
+          retention-days: 5
