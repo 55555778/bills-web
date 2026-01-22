@@ -19,67 +19,62 @@ jobs:
         node-version: [20] # 这里指定使用 Node.js 20
 
     # 6. 这里才是你之前写的 steps
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-      # 1. 设置 Node.js 环境
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          # ⚠️ 注意：这里不需要 cache: 'npm' 了，我们后面手动处理 pnpm 缓存
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
 
-      # 2. 安装 pnpm
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9 # 指定 pnpm 版本
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9
 
-      # 3. 获取 pnpm 缓存目录
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-      # 4. 开启 pnpm 缓存
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+    # 1. 修改缓存配置：把 Cypress 的二进制目录也加上！
+    - name: Setup pnpm and Cypress cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ env.STORE_PATH }}
+          ~/.cache/Cypress
+        # 上面这一行增加了 Cypress 默认缓存路径
+        key: ${{ runner.os }}-pnpm-cypress-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-cypress-
 
-      # 5. 安装依赖
-      - name: Install Dependencies
-        # ⚠️ 删除 env 部分，不要强制指定 CYPRESS_DOWNLOAD_MIRROR
-        # 让它自动去官方 CDN 下载，由于服务器在国外，速度会很快且不会 404
-        run: |
-          # ⚠️ 删除 pnpm config set registry ... 那一行
-          # 直接安装即可
-          pnpm install --frozen-lockfile
+    - name: Install Dependencies
+      run: pnpm install --frozen-lockfile
 
-      # 6. 运行测试 (关键修改：先启动服务，再跑测试)
-      - name: Run Cypress Tests
-        run: |
-          # 1. 在后台启动前端服务 (注意结尾的 & 符号，表示后台运行)
-          # 如果你的启动命令不是 pnpm run dev，请修改这里
-          pnpm run dev & 
+    # 2. 修改运行步骤：增加 npx cypress install
+    - name: Run Cypress Tests
+      run: |
+        # 显式安装 Cypress 二进制文件 (如果缓存里有，它会瞬间完成；如果没有，它会下载)
+        npx cypress install
 
-          # 2. 等待 localhost:5173 变得可访问
-          # npx wait-on 会一直轮询，直到网页能打开为止，防止测试跑太快
-          npx wait-on http://localhost:5173
+        # 后台启动服务
+        pnpm run dev & 
 
-          # 3. 服务启动好了，现在开始跑测试
-          npx cypress run
-      # --- 这里是新增的第 7 步 ---
-      - name: Upload Cypress Evidence
-        if: always() # 无论是否失败，都上传
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-evidence
-          path: |
-            cypress/screenshots
-            cypress/videos
-          retention-days: 5
+        # 等待服务就绪
+        npx wait-on http://localhost:5173
+
+        # 运行测试
+        npx cypress run
+
+    # 3. 保持之前添加的保存报告功能
+    - name: Upload Cypress Evidence
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cypress-evidence
+        path: |
+          cypress/screenshots
+          cypress/videos
+        retention-days: 5
