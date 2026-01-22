@@ -1,0 +1,32 @@
+name: Private Server CI Test
+
+on: [push] # 只要有 push 就触发
+
+jobs:
+  cypress-run:
+    # ⚠️ 关键点在这里！
+    # 以前是 'ubuntu-latest' (用 GitHub 的电脑)
+    # 现在改成 'self-hosted' (用你的服务器)
+    runs-on: self-hosted
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout Code (拉代码)
+        uses: actions/checkout@v4
+
+      - name: Use Node.js (设置环境)
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Dependencies (装依赖)
+        run: npm install
+
+      # 这一步是为了验证 Cypress 能不能在无头模式下跑起来
+      - name: Run Cypress Tests (开始测试)
+        run: npx cypress run
+        # 注意：这里我们直接用命令跑，没用 cypress-io/github-action 插件
+        # 因为在自托管环境下，手动控制更稳妥

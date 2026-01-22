@@ -1,5 +1,6 @@
 import type { FormProps } from 'antd';
 import { Button, Checkbox, Form, Input, Radio, Tabs } from 'antd';
+import clsx from 'clsx';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserApi } from '../../api/user';
@@ -15,6 +16,86 @@ type FieldType = {
   permissions?: string;
   email?: string;
 };
+
+const LoginFormItems = (
+  <>
+    <Form.Item<FieldType>
+      label="邮箱"
+      data-testid="login-email"
+      name="email"
+      rules={[{ required: true, message: 'Please input your email!', type: 'email' }]}
+    >
+      <Input />
+    </Form.Item>
+
+    <Form.Item<FieldType>
+      label="密码"
+      name="password"
+      data-testid="login-password"
+      rules={[{ required: true, message: 'Please input your password!' }]}
+    >
+      <Input.Password />
+    </Form.Item>
+
+    <Form.Item<FieldType> name="remember" valuePropName="checked" wrapperCol={{ offset: 10 }}>
+      <Checkbox>Remember me</Checkbox>
+    </Form.Item>
+  </>
+);
+
+const SignupFormItems = (
+  <>
+    <Form.Item<FieldType>
+      label="名称"
+      name="name"
+      data-testid="signup-name"
+      rules={[{ required: true, message: 'Please input your username!' }]}
+    >
+      <Input />
+    </Form.Item>
+    <Form.Item<FieldType>
+      label="邮箱"
+      name="email"
+      data-testid="signup-email"
+      rules={[{ required: true, message: 'Please input your email!', type: 'email' }]}
+    >
+      <Input />
+    </Form.Item>
+    <Form.Item<FieldType>
+      label="密码"
+      name="password"
+      data-testid="signup-password"
+      rules={[{ required: true, message: 'Please input your password!' }]}
+    >
+      <Input.Password />
+    </Form.Item>
+
+    <Form.Item<FieldType>
+      name="permissions"
+      label="权限"
+      data-testid="signup-permissions"
+      rules={[
+        {
+          required: true,
+          message: 'Please select your permissions!',
+        },
+      ]}
+    >
+      <Radio.Group
+        options={[
+          {
+            value: 'admin',
+            label: 'Admin',
+          },
+          {
+            value: 'user',
+            label: 'User',
+          },
+        ]}
+      />
+    </Form.Item>
+  </>
+);
 
 export default function Login() {
   const { setUser } = useUserStore();
@@ -85,7 +166,7 @@ export default function Login() {
       label: `Log in`,
       children: (
         <Form
-          name="basic"
+          name="login"
           labelCol={{ span: 10 }}
           wrapperCol={{ span: 16 }}
           style={{ maxWidth: 600 }}
@@ -94,28 +175,9 @@ export default function Login() {
           onFinishFailed={onFinishFailed}
           autoComplete="off"
         >
-          <Form.Item<FieldType>
-            label="邮箱"
-            name="email"
-            rules={[{ required: true, message: 'Please input your email!', type: 'email' }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item<FieldType>
-            label="密码"
-            name="password"
-            rules={[{ required: true, message: 'Please input your password!' }]}
-          >
-            <Input.Password />
-          </Form.Item>
-
-          <Form.Item<FieldType> name="remember" valuePropName="checked" label={null}>
-            <Checkbox>Remember me</Checkbox>
-          </Form.Item>
-
-          <Form.Item label={null}>
-            <Button type="primary" htmlType="submit" className="w-full">
+          {LoginFormItems}
+          <Form.Item wrapperCol={{ offset: 10, span: 16 }}>
+            <Button type="primary" data-testid="login-submit" htmlType="submit" className="w-full">
               Submit
             </Button>
           </Form.Item>
@@ -127,65 +189,17 @@ export default function Login() {
       label: `Sign up`,
       children: (
         <Form
-          name="basic"
+          name="signup"
           labelCol={{ span: 10 }}
           wrapperCol={{ span: 16 }}
           style={{ maxWidth: 600 }}
-          // initialValues={{ remember: true }}
           onFinish={onFinish}
           onFinishFailed={onFinishFailed}
           autoComplete="off"
         >
-          <Form.Item<FieldType>
-            label="名称"
-            name="name"
-            rules={[{ required: true, message: 'Please input your username!' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item<FieldType>
-            label="邮箱"
-            name="email"
-            rules={[{ required: true, message: 'Please input your email!', type: 'email' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item<FieldType>
-            label="密码"
-            name="password"
-            rules={[{ required: true, message: 'Please input your password!' }]}
-          >
-            <Input.Password />
-          </Form.Item>
-
-          <Form.Item<FieldType>
-            name="permissions"
-            label="权限"
-            rules={[
-              {
-                required: true,
-                message: 'Please select your permissions!',
-              },
-            ]}
-          >
-            <Radio.Group
-              options={[
-                {
-                  value: 'admin',
-                  className: 'option-1',
-                  label: 'Admin',
-                },
-                {
-                  value: 'user',
-                  className: 'option-2',
-                  label: 'User',
-                },
-              ]}
-            />
-          </Form.Item>
-
-          <Form.Item label={null}>
-            <Button type="primary" htmlType="submit">
+          {SignupFormItems}
+          <Form.Item wrapperCol={{ offset: 10, span: 16 }}>
+            <Button type="primary" data-testid="signup-submit" htmlType="submit" className="w-full">
               Submit
             </Button>
           </Form.Item>
@@ -195,19 +209,27 @@ export default function Login() {
   ];
 
   return (
-    <div className={` min-h-screen  f-c-c flex-col ${!isDark ? 'isDark_bg isMain_text' : ''}`}>
+    <div
+      className={clsx(
+        'min-h-screen flex flex-col justify-center items-center bg-[#f0f2f5]',
+        !isDark && 'isDark_bg isMain_text',
+      )}
+    >
       <div
-        className={`w-100! pt-10  rounded-2xl bg-[#fff] f-c-c flex-col shadow-c-cycle  ${!isDark ? 'isDark_box_bg' : ''}`}
+        className={clsx(
+          'w-[450px] pt-10 rounded-2xl bg-white flex flex-col justify-center items-center shadow-c-cycle',
+          !isDark && 'isDark_box_bg',
+        )}
       >
         <h1 className="mb-2 font-medium text-2xl">Welcome Back</h1>
 
         <Tabs
-          defaultActiveKey="1"
+          defaultActiveKey="login"
           size="middle"
           centered
           onChange={onChangeTabs}
           items={items}
-          className="w-80%"
+          className="w-[80%] flex justify-center items-center"
         />
       </div>
     </div>
