@@ -73,3 +73,13 @@ jobs:
 
           # 3. 服务启动好了，现在开始跑测试
           npx cypress run
+      # --- 这里是新增的第 7 步 ---
+      - name: Upload Cypress Evidence
+        if: always() # 无论是否失败，都上传
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-evidence
+          path: |
+            cypress/screenshots
+            cypress/videos
+          retention-days: 5
