@@ -60,6 +60,16 @@ jobs:
           # 直接安装即可
           pnpm install --frozen-lockfile
 
-      # 6. 运行测试
+      # 6. 运行测试 (关键修改：先启动服务，再跑测试)
       - name: Run Cypress Tests
-        run: npx cypress run
+        run: |
+          # 1. 在后台启动前端服务 (注意结尾的 & 符号，表示后台运行)
+          # 如果你的启动命令不是 pnpm run dev，请修改这里
+          pnpm run dev & 
+
+          # 2. 等待 localhost:5173 变得可访问
+          # npx wait-on 会一直轮询，直到网页能打开为止，防止测试跑太快
+          npx wait-on http://localhost:5173
+
+          # 3. 服务启动好了，现在开始跑测试
+          npx cypress run
