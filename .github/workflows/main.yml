@@ -1,45 +1,64 @@
-steps:
-  - name: Checkout Code
-    uses: actions/checkout@v4
+name: CI/CD Pipeline # 1. 工作流名称
 
-  # 1. 设置 Node.js 环境
-  - name: Use Node.js
-    uses: actions/setup-node@v4
-    with:
-      node-version: ${{ matrix.node-version }}
-      # ⚠️ 注意：这里不需要 cache: 'npm' 了，我们后面手动处理 pnpm 缓存
+# 2. 触发条件：推送到 main 分支时运行
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
-  # 2. 安装 pnpm (为了保险起见，我们在 CI 里也声明装一下，防止服务器环境没弄好)
-  - name: Install pnpm
-    uses: pnpm/action-setup@v2
-    with:
-      version: 9 # 指定 pnpm 版本
+# 3. 任务定义区域
+jobs:
+  build-and-test: # 任务ID
+    name: Build and Test
+    runs-on: ubuntu-latest # 4. 指定运行环境 (Linux)
 
-  # 3. 获取 pnpm 缓存目录 (pnpm 的缓存机制稍微有点不同)
-  - name: Get pnpm store directory
-    shell: bash
-    run: |
-      echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+    # 5. 定义变量矩阵 (因为你的代码里用了 matrix.node-version)
+    strategy:
+      matrix:
+        node-version: [20] # 这里指定使用 Node.js 20
 
-  # 4. 开启 pnpm 缓存 (这样第二次跑就会飞快)
-  - name: Setup pnpm cache
-    uses: actions/cache@v3
-    with:
-      path: ${{ env.STORE_PATH }}
-      key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-      restore-keys: |
-        ${{ runner.os }}-pnpm-store-
+    # 6. 这里才是你之前写的 steps
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-  # 5. 安装依赖 (关键步骤！加上国内源！)
-  - name: Install Dependencies
-    env:
-      # 依然需要这个环境变量来加速 Cypress 二进制下载
-      CYPRESS_DOWNLOAD_MIRROR: https://npmmirror.com/mirrors/cypress/
-    run: |
-      pnpm config set registry https://registry.npmmirror.com
-      pnpm install --frozen-lockfile # 相当于 npm ci
+      # 1. 设置 Node.js 环境
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          # ⚠️ 注意：这里不需要 cache: 'npm' 了，我们后面手动处理 pnpm 缓存
 
-  # 6. 运行测试
-  - name: Run Cypress Tests
-    run: npx cypress run
-# sss÷
+      # 2. 安装 pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9 # 指定 pnpm 版本
+
+      # 3. 获取 pnpm 缓存目录
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      # 4. 开启 pnpm 缓存
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      # 5. 安装依赖
+      - name: Install Dependencies
+        env:
+          CYPRESS_DOWNLOAD_MIRROR: https://npmmirror.com/mirrors/cypress/
+        run: |
+          pnpm config set registry https://registry.npmmirror.com
+          pnpm install --frozen-lockfile
+
+      # 6. 运行测试
+      - name: Run Cypress Tests
+        run: npx cypress run
